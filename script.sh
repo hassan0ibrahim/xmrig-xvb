@@ -26,12 +26,6 @@ get_avg_values() {
   echo "$avg1 $avg24"
 }
 
-start_xmrig() {
-  local command=$1
-  pkill --signal SIGINT xmrig 2>/dev/null
-  eval "$command" &
-}
-
 main() {
   local value=$(get_block_value)
   read avg1 avg24 <<< $(get_avg_values)
