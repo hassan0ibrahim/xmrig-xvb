@@ -1,7 +1,7 @@
 #!/bin/bash
 
-ADDRESS=""
-TOKEN=""
+ADDRESS="INSERT YOUR WALLET ADDRESS"
+TOKEN="INSERT YOUR XvB TOKEN"
 COMMAND_IF_TRUE="./xmrig -o eu.xmrvsbeast.com:4247 -u ${ADDRESS:0:8} --randomx-1gb"
 COMMAND_IF_FALSE="./xmrig -o 127.0.0.1:3333 --randomx-1gb"
 
@@ -25,9 +25,17 @@ start_xmrig() {
 }
 
 main() {
-  local status="p2pool"
+  local value=$(get_block_value)
+  read avg1 avg24 <<< $(get_avg_values)
+  # Start Xmrig
+  if awk "BEGIN {exit !($value > 0 && ($avg24 < 10 || $avg1 < 10))}"; then
+    eval '$COMMAND_IF_TRUE' &
+    status="xvb"
+  else
+    eval '$COMMAND_IF_FALSE' &
+    status="p2pool"
+  fi
   local mins=0
-
   while true; do
     local value=$(get_block_value)
     read avg1 avg24 <<< $(get_avg_values)
@@ -36,20 +44,30 @@ main() {
     echo -e "$avg1,$avg24"
     echo -e "$value"
 
-    if [[ "$value" -gt 0 && $(awk "BEGIN {print ($avg24 < 10 && $avg1 < 10)}") == "1" ]]; then
-      new_status="xvb"
-      command="$COMMAND_IF_TRUE"
+    # Check if both values are greater than 10
+    if awk "BEGIN {exit !($value > 0 && ($avg24 < 10 || $avg1 < 10))}"; then
+      # Stop the true command if it's running
+      if [[ $status == "p2pool" ]]; then
+        echo -e "Mining on XvB"
+        status="xvb"
+        pkill --signal SIGINT xmrig
+        # Uncomment and modify the following line if needed
+        eval '$COMMAND_IF_TRUE' &
+      else
+        echo -e $status
+      fi
     else
-      new_status="p2pool"
-      command="$COMMAND_IF_FALSE"
+      # Stop the true command if it's running
+      if [[ $status == "xvb" ]]; then
+        echo -e "Mining on p2pool"
+        status="p2pool"
+        pkill --signal SIGINT xmrig
+        # Uncomment and modify the following line if needed
+        eval '$COMMAND_IF_FALSE' &
+      else
+        echo -e $status
+      fi
     fi
-
-    if [[ "$new_status" != "$status" ]]; then
-      echo -e "Switching to $new_status"
-      start_xmrig "$command"
-      status="$new_status"
-    fi
-
     mins=$((mins + 1))
     sleep 600
   done
