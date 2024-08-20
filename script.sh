@@ -8,8 +8,8 @@ if [ "$EUID" -ne 0 ]; then
   echo "This script must be run with sudo."
   exit 1
 fi
-if pgrep p2pool > /dev/null; then
-  echo "P2pool isn't running, run it first using ./p2pool-v4.1-linux-x64/p2pool --mini --host <MoneroNodeAddress> --wallet <Wallet Address>"
+if [ -z "$(pgrep p2pool)" ]; then
+  echo "P2pool isn't running, run it first using ./p2pool-v4.1-linux-x64/p2pool --mini --host <MoneroNodeAddress> --wallet <WalletAddress>"
   exit 1
 fi
 ADDRESS="$1"
