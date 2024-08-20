@@ -32,7 +32,7 @@ main() {
     local value=$(get_block_value)
     read avg1 avg24 <<< $(get_avg_values)
 
-    echo -e "$((mins/6))h"
+    echo -e "$((mins/6))h$((mins*10%60))m"
     echo -e "$avg1,$avg24"
     echo -e "$value"
 
