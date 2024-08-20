@@ -8,6 +8,10 @@ if [ "$EUID" -ne 0 ]; then
   echo "This script must be run with sudo."
   exit 1
 fi
+if pgrep p2pool > /dev/null; then
+  echo "P2pool isn't running, run it first using ./p2pool-v4.1-linux-x64/p2pool --mini --host <MoneroNodeAddress> --wallet <Wallet Address>"
+  exit 1
+fi
 ADDRESS="$1"
 TOKEN="$2"
 COMMAND_IF_TRUE="./xmrig -o eu.xmrvsbeast.com:4247 -u ${ADDRESS:0:8} --randomx-1gb"
@@ -29,6 +33,7 @@ get_avg_values() {
 main() {
   local value=$(get_block_value)
   read avg1 avg24 <<< $(get_avg_values)
+  local mins=0
   # Start Xmrig
   if awk "BEGIN {exit !($value > 0 && ($avg24 < 10 || $avg1 < 10))}"; then
     eval '$COMMAND_IF_TRUE' &
@@ -37,7 +42,6 @@ main() {
     eval '$COMMAND_IF_FALSE' &
     status="p2pool"
   fi
-  local mins=0
   while true; do
     local value=$(get_block_value)
     read avg1 avg24 <<< $(get_avg_values)
@@ -46,7 +50,7 @@ main() {
     echo -e "$avg1,$avg24"
     echo -e "$value"
 
-    # Check if both values are greater than 10
+    # Check if both values are less than 10 and there's atleast 1 share in P2pool
     if awk "BEGIN {exit !($value > 0 && ($avg24 < 10 || $avg1 < 10))}"; then
       # Stop the true command if it's running
       if [[ $status == "p2pool" ]]; then
@@ -61,7 +65,7 @@ main() {
     else
       # Stop the true command if it's running
       if [[ $status == "xvb" ]]; then
-        echo -e "Mining on p2pool"
+        echo -e "Mining on P2pool"
         status="p2pool"
         pkill --signal SIGINT xmrig
         # Uncomment and modify the following line if needed
