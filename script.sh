@@ -1,7 +1,15 @@
 #!/bin/bash
 
-ADDRESS="INSERT YOUR WALLET ADDRESS"
-TOKEN="INSERT YOUR XvB TOKEN"
+if [ "$#" -ne 2 ]; then
+  echo "Usage: ./script <Wallet Address> <XvB Token>"
+  exit 1
+fi
+if [ "$EUID" -ne 0 ]; then
+  echo "This script must be run with sudo."
+  exit 1
+fi
+ADDRESS="$1"
+TOKEN="$2"
 COMMAND_IF_TRUE="./xmrig -o eu.xmrvsbeast.com:4247 -u ${ADDRESS:0:8} --randomx-1gb"
 COMMAND_IF_FALSE="./xmrig -o 127.0.0.1:3333 --randomx-1gb"
 
