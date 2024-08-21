@@ -17,7 +17,7 @@ TOKEN="$2"
 COMMAND_IF_TRUE="./xmrig -o eu.xmrvsbeast.com:4247 -u ${ADDRESS:0:8} --randomx-1gb"
 COMMAND_IF_FALSE="./xmrig -o 127.0.0.1:3333 --randomx-1gb"
 
-URL="https://mini.p2pool.observer/miner/$ADDRESS"
+URL="https://p2pool.observer/miner/$ADDRESS"
 BONUS_URL="https://xmrvsbeast.com/cgi-bin/p2pool_bonus_history_api.cgi?address=$ADDRESS&token=$TOKEN"
 
 get_block_value() {
@@ -35,43 +35,41 @@ main() {
   read avg1 avg24 <<< $(get_avg_values)
   local mins=0
   # Start Xmrig
-  if awk "BEGIN {exit !($value > 0 && ($avg24 < 10 || $avg1 < 10))}"; then
-    eval '$COMMAND_IF_TRUE' &
+  if awk "BEGIN {exit !($value > 0 && ($avg24 < 11 || $avg1 < 15))}"; then
+    eval $COMMAND_IF_TRUE &
     status="xvb"
   else
-    eval '$COMMAND_IF_FALSE' &
+    eval $COMMAND_IF_FALSE &
     status="p2pool"
   fi
   while true; do
     local value=$(get_block_value)
     read avg1 avg24 <<< $(get_avg_values)
 
-    echo -e "$((mins/6))h$((mins*10%60))m"
+    echo -e "$((mins/6))h$((mins*10%60))m mining on $status"
     echo -e "$avg1,$avg24"
     echo -e "$value"
 
     # Check if both values are less than 10 and there's atleast 1 share in P2pool
-    if awk "BEGIN {exit !($value > 0 && ($avg24 < 10 || $avg1 < 10))}"; then
+    if awk "BEGIN {exit !($value > 0 && ($avg24 < 11 || $avg1 < 15))}"; then
       # Stop the true command if it's running
       if [[ $status == "p2pool" ]]; then
         echo -e "Mining on XvB"
+        mins=0
         status="xvb"
         pkill --signal SIGINT xmrig
         # Uncomment and modify the following line if needed
-        eval '$COMMAND_IF_TRUE' &
-      else
-        echo -e $status
+        eval $COMMAND_IF_TRUE &
       fi
     else
       # Stop the true command if it's running
       if [[ $status == "xvb" ]]; then
         echo -e "Mining on P2pool"
+        mins=0
         status="p2pool"
         pkill --signal SIGINT xmrig
         # Uncomment and modify the following line if needed
-        eval '$COMMAND_IF_FALSE' &
-      else
-        echo -e $status
+        eval $COMMAND_IF_FALSE &
       fi
     fi
     mins=$((mins + 1))
